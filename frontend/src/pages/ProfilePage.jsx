@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Github, Wifi, WifiOff, Info, BookOpen, GraduationCap } from 'lucide-react';
+import { Github, Wifi, WifiOff, Info, BookOpen, GraduationCap, Database } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import InstallButton from '../components/ui/InstallButton.jsx';
 import { useOnlineStatus } from '../hooks/useOnlineStatus.js';
 import { MAHASISWA, APP_VERSION, GITHUB_URL, STUDY_SCORE_FORMULA } from '../constants/index.js';
+import { authService } from '../services/authService.js';
 
 export default function ProfilePage() {
   const isOnline = useOnlineStatus();
@@ -100,6 +102,10 @@ export default function ProfilePage() {
       </div>
 
       {/* Install Button */}
+      <Link to={authService.isAdmin() ? '/kelola' : '/admin/login'} className="btn btn-primary btn-full" id="profile-manage-data-btn" style={{ marginBottom: 'var(--space-4)' }}>
+        <Database size={18} /> {authService.isAdmin() ? 'Kelola Data Kafe & Promo' : 'Login Admin untuk Kelola Data'}
+      </Link>
+
       <div style={{ marginBottom: 'var(--space-4)' }}>
         <InstallButton className="btn-full" />
       </div>

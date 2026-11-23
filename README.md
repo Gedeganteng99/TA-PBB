@@ -35,7 +35,7 @@ ngopikampus/
 │   │   ├── controllers/
 │   │   ├── routes/
 │   │   └── app.js
-│   └── vercel.json
+│   └── package.json
 ├── frontend/         # React 18 + Vite + PWA (deploy ke Vercel)
 │   ├── src/
 │   │   ├── config/   # api.js (axios instance)
@@ -68,11 +68,13 @@ Tabel: `cafes`, `reviews`, `crowd_reports`, `promos`, `favorites`
 | Method | Path | Deskripsi |
 |--------|------|-----------|
 | GET | `/api/health` | Health check |
+| POST | `/api/auth/login` | Login admin (kredensial dari environment backend) |
+| GET | `/api/auth/me` | Memeriksa role token; default pengguna (read-only) |
 | GET | `/api/cafes` | List kafe (search, area, sort, open_now, min_wifi, dll) |
 | GET | `/api/cafes/:id` | Detail kafe + study_score + crowd_status |
-| POST | `/api/cafes` | Tambah kafe |
-| PUT | `/api/cafes/:id` | Update kafe |
-| DELETE | `/api/cafes/:id` | Hapus kafe |
+| POST | `/api/cafes` | Tambah kafe (admin) |
+| PUT | `/api/cafes/:id` | Update kafe (admin) |
+| DELETE | `/api/cafes/:id` | Hapus kafe (admin) |
 | GET | `/api/cafes/:id/reviews` | List ulasan |
 | POST | `/api/cafes/:id/reviews` | Tambah ulasan |
 | DELETE | `/api/reviews/:id` | Hapus ulasan |
@@ -80,12 +82,20 @@ Tabel: `cafes`, `reviews`, `crowd_reports`, `promos`, `favorites`
 | POST | `/api/cafes/:id/crowd` | Lapor crowd (rate limit: 1x/10 menit per user) |
 | GET | `/api/promos` | List promo (active=true, cafe_id) |
 | GET | `/api/promos/:id` | Detail promo |
-| POST | `/api/promos` | Tambah promo |
-| PUT | `/api/promos/:id` | Update promo |
-| DELETE | `/api/promos/:id` | Hapus promo |
+| POST | `/api/promos` | Tambah promo (admin) |
+| PUT | `/api/promos/:id` | Update promo (admin) |
+| DELETE | `/api/promos/:id` | Hapus promo (admin) |
 | GET | `/api/favorites` | Favorit per user_id |
 | POST | `/api/favorites/toggle` | Toggle favorit |
 | POST | `/api/recommendations` | Spot Finder – rekomendasi terurut + alasan |
+
+## 👥 Role Admin dan Pengguna
+
+- **Pengguna** dapat membuka aplikasi tanpa login dan membaca data. Operasi CRUD kafe/promo di backend hanya menerima token admin.
+- Saat sesi baru dibuka, halaman pilihan role wajib ditampilkan. Pengguna memilih tombol pengguna untuk masuk langsung; sebelum memilih role, halaman aplikasi tidak dapat diakses. Role pengguna dibatasi ke daftar kafe.
+- **Admin** login melalui metode email dan password. Isi `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `AUTH_TOKEN_SECRET` di environment backend; jangan simpan kredensial dalam source code.
+- Token admin berlaku 8 jam. Tombol **Keluar** menghapus token lokal.
+- Policy RLS yang dibuka untuk praktikum tetap perlu diperketat sebelum produksi.
 
 ## 📊 Formula Study Score
 
@@ -127,28 +137,29 @@ npm run dev
 # App berjalan di http://localhost:5173
 ```
 
-## ☁️ Deploy ke Vercel
+## ☁️ Deploy sebagai Vercel multi-service project
 
-### Backend
+Repo ini memakai satu Vercel project dengan dua services yang dibangun terpisah. `vercel.json` di root mengirim `/api/*` ke Express backend dan semua jalur lain ke Vite frontend. Frontend memanggil API dengan path relatif `/api/...`, sehingga tidak perlu mengatur URL host backend.
 
-1. Push ke GitHub
-2. Import repo ke [vercel.com](https://vercel.com)
-3. Set **Root Directory**: `backend`
-4. Tambah Environment Variables:
-   - `SUPABASE_URL` = URL Supabase project kamu
-   - `SUPABASE_KEY` = anon key Supabase
-   - `FRONTEND_URL` = URL frontend Vercel (setelah deploy frontend)
-5. Deploy
+1. Push repo ke GitHub dan impor repo **sekali** sebagai project di [Vercel](https://vercel.com).
+2. Biarkan **Root Directory** project di root repo agar Vercel membaca `vercel.json` multi-service.
+3. Tambahkan environment variables project: `SUPABASE_URL`, `SUPABASE_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `AUTH_TOKEN_SECRET` (minimal 32 karakter).
+4. Deploy. Pastikan deployment memakai dukungan **Services** Vercel; fitur ini masih berstatus Beta menurut dokumentasi Vercel.
+5. `FRONTEND_URL` tidak dibutuhkan untuk pemanggilan same-origin. `VITE_API_BASE_URL` juga biarkan kosong/tidak disetel di Vercel. Untuk pengembangan lokal dengan dua server terpisah, isi `VITE_API_BASE_URL=http://localhost:3001` di `frontend/.env`.
 
-### Frontend
-
-1. Import repo ke Vercel (project baru)
-2. Set **Root Directory**: `frontend`
-3. Tambah Environment Variables:
-   - `VITE_API_BASE_URL` = URL backend Vercel dari langkah sebelumnya
-4. Deploy
+Jalur publik: `/(semua selain /api/*)` → frontend; `/api/*` → backend. Kedua services menerima traffic melalui rewrite tersebut. Tidak ada service binding internal: browser frontend memanggil API melalui jalur publik satu domain, sedangkan backend memanggil Supabase yang merupakan layanan eksternal, bukan service Vercel.
 
 ## 🔧 Cara Uji PWA & Offline
+
+### Akses dari iPhone pada Wi-Fi yang sama
+
+1. Sambungkan PC dan iPhone ke Wi-Fi yang sama.
+2. Di PowerShell PC, jalankan `ipconfig` lalu cari **IPv4 Address** pada adapter Wi-Fi.
+3. Ubah `frontend/.env` menjadi `VITE_API_BASE_URL=http://IP-PC:3001` dan `backend/.env` menjadi `FRONTEND_URL=http://IP-PC:5173` (ganti `IP-PC` dengan alamat IPv4 tadi).
+4. Jalankan backend (`npm run dev`) dan frontend (`npm run dev`). Jika Windows Firewall meminta izin Node.js, izinkan jaringan **Private**.
+5. Di Safari iPhone, buka `http://IP-PC:5173`.
+
+Untuk memasang PWA di iPhone, gunakan URL HTTPS hasil deploy. Di Safari buka situs, ketuk **Share**, pilih **Add to Home Screen**, lalu **Add**. Jika opsinya tidak terlihat, gulir menu Share ke bawah atau pilih **Edit Actions**. [Panduan Apple](https://support.apple.com/en-in/guide/iphone/iph42ab2f3a7/27/ios).
 
 1. Buka Chrome → buka URL app
 2. Buka DevTools (F12) → Application → Service Workers
@@ -175,6 +186,9 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_KEY=your-anon-key-here
 PORT=3001
 FRONTEND_URL=http://localhost:5173
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=replace-with-a-strong-password
+AUTH_TOKEN_SECRET=replace-with-a-random-secret-at-least-32-characters
 ```
 
 ### Frontend `.env`
@@ -195,7 +209,7 @@ Import file `postman_collection.json` ke Postman, lalu set variable:
 2. **SQL**: Jalankan `schema.sql` lalu `seed.sql` di SQL Editor
 3. **Env**: Isi `.env` backend & frontend
 4. **Test API**: Jalankan backend → test dengan Postman/curl
-5. **Deploy**: Backend ke Vercel → Frontend ke Vercel
+5. **Deploy**: Impor root repo sebagai satu Vercel multi-service project
 6. **GitHub**: `git init` → `git remote add origin` → `git push`
 
 ## 📁 GitHub Setup

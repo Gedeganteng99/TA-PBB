@@ -7,7 +7,9 @@ import cafeRoutes           from './routes/cafeRoutes.js';
 import promoRoutes          from './routes/promoRoutes.js';
 import favoriteRoutes       from './routes/favoriteRoutes.js';
 import recommendationRoutes from './routes/recommendationRoutes.js';
+import authRoutes             from './routes/authRoutes.js';
 import { removeReview }     from './controllers/reviewController.js';
+import { identifyRole, requireAdmin } from './middleware/auth.js';
 
 const app = express();
 
@@ -37,12 +39,13 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/cafes',           cafeRoutes);
+app.use('/api/auth',            authRoutes);
 app.use('/api/promos',          promoRoutes);
 app.use('/api/favorites',       favoriteRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 
 // Standalone DELETE /api/reviews/:id
-app.delete('/api/reviews/:id', removeReview);
+app.delete('/api/reviews/:id', identifyRole, requireAdmin, removeReview);
 
 // 404 handler
 app.use((req, res) => {
