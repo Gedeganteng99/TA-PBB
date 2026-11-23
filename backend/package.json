@@ -1,0 +1,20 @@
+{
+  "name": "ngopikampus-backend",
+  "version": "1.0.0",
+  "description": "NgopiKampus API – Katalog Kafe Ramah Mahasiswa di Sekitar Undip Tembalang",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}

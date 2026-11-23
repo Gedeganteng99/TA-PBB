@@ -1,0 +1,155 @@
+{
+  "info": {
+    "_postman_id": "ngopikampus-api-collection",
+    "name": "NgopiKampus API",
+    "description": "Koleksi endpoint API NgopiKampus – Katalog Kafe Ramah Mahasiswa di Sekitar Undip Tembalang",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://localhost:3001", "type": "string" },
+    { "key": "CAFE_ID",  "value": "", "type": "string" },
+    { "key": "USER_ID",  "value": "550e8400-e29b-41d4-a716-446655440000", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cafes",
+      "item": [
+        { "name": "GET /api/cafes (semua)", "request": { "method": "GET", "url": "{{BASE_URL}}/api/cafes" } },
+        { "name": "GET /api/cafes (sort=study_score)", "request": { "method": "GET", "url": { "raw": "{{BASE_URL}}/api/cafes?sort=study_score&limit=5", "query": [{ "key": "sort", "value": "study_score" }, { "key": "limit", "value": "5" }] } } },
+        { "name": "GET /api/cafes (open_now=true)", "request": { "method": "GET", "url": { "raw": "{{BASE_URL}}/api/cafes?open_now=true", "query": [{ "key": "open_now", "value": "true" }] } } },
+        { "name": "GET /api/cafes (search)", "request": { "method": "GET", "url": { "raw": "{{BASE_URL}}/api/cafes?search=StudyBrew", "query": [{ "key": "search", "value": "StudyBrew" }] } } },
+        { "name": "GET /api/cafes/:id", "request": { "method": "GET", "url": "{{BASE_URL}}/api/cafes/{{CAFE_ID}}" } },
+        {
+          "name": "POST /api/cafes",
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/cafes",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kafe Test\",\n  \"description\": \"Kafe uji coba\",\n  \"address\": \"Jl. Test No. 1, Tembalang\",\n  \"area\": \"Tembalang\",\n  \"latitude\": -7.0510,\n  \"longitude\": 110.4375,\n  \"price_min\": 10000,\n  \"price_max\": 30000,\n  \"open_time\": \"08:00\",\n  \"close_time\": \"22:00\",\n  \"wifi_speed_mbps\": 50,\n  \"outlet_level\": 4,\n  \"noise_level\": 4,\n  \"seat_capacity\": 60,\n  \"has_ac\": true,\n  \"has_musholla\": false,\n  \"tags\": [\"skripsi\", \"wifi-kencang\"]\n}"
+            }
+          }
+        },
+        { "name": "PUT /api/cafes/:id", "request": { "method": "PUT", "url": "{{BASE_URL}}/api/cafes/{{CAFE_ID}}", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"wifi_speed_mbps\": 80\n}" } } },
+        { "name": "DELETE /api/cafes/:id", "request": { "method": "DELETE", "url": "{{BASE_URL}}/api/cafes/{{CAFE_ID}}" } }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        { "name": "GET /api/cafes/:id/reviews", "request": { "method": "GET", "url": "{{BASE_URL}}/api/cafes/{{CAFE_ID}}/reviews" } },
+        {
+          "name": "POST /api/cafes/:id/reviews",
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/cafes/{{CAFE_ID}}/reviews",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{USER_ID}}\",\n  \"nickname\": \"Mahasiswa Undip\",\n  \"rating\": 5,\n  \"comment\": \"Kafe yang sangat nyaman untuk belajar!\",\n  \"tags\": [\"skripsi\", \"wifi-kencang\"]\n}"
+            }
+          }
+        },
+        { "name": "DELETE /api/reviews/:id", "request": { "method": "DELETE", "url": "{{BASE_URL}}/api/reviews/REVIEW_ID_HERE" } }
+      ]
+    },
+    {
+      "name": "Crowd",
+      "item": [
+        { "name": "GET /api/cafes/:id/crowd", "request": { "method": "GET", "url": "{{BASE_URL}}/api/cafes/{{CAFE_ID}}/crowd" } },
+        {
+          "name": "POST /api/cafes/:id/crowd",
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/cafes/{{CAFE_ID}}/crowd",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{USER_ID}}\",\n  \"level\": \"sepi\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Promos",
+      "item": [
+        { "name": "GET /api/promos (semua)", "request": { "method": "GET", "url": "{{BASE_URL}}/api/promos" } },
+        { "name": "GET /api/promos (active)", "request": { "method": "GET", "url": { "raw": "{{BASE_URL}}/api/promos?active=true", "query": [{ "key": "active", "value": "true" }] } } },
+        { "name": "GET /api/promos/:id", "request": { "method": "GET", "url": "{{BASE_URL}}/api/promos/PROMO_ID_HERE" } },
+        {
+          "name": "POST /api/promos",
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/promos",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cafe_id\": \"{{CAFE_ID}}\",\n  \"title\": \"Diskon 15% Mahasiswa\",\n  \"description\": \"Diskon khusus mahasiswa Undip\",\n  \"terms\": \"Tunjukkan KTM aktif\",\n  \"requires_ktm\": true,\n  \"valid_from\": \"2026-11-01\",\n  \"valid_until\": \"2026-12-31\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "item": [
+        { "name": "GET /api/favorites", "request": { "method": "GET", "url": { "raw": "{{BASE_URL}}/api/favorites?user_id={{USER_ID}}", "query": [{ "key": "user_id", "value": "{{USER_ID}}" }] } } },
+        {
+          "name": "POST /api/favorites/toggle",
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/favorites/toggle",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cafe_id\": \"{{CAFE_ID}}\",\n  \"user_id\": \"{{USER_ID}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recommendations",
+      "item": [
+        {
+          "name": "POST /api/recommendations (skripsi)",
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/recommendations",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"purpose\": \"skripsi\",\n  \"budget\": 35000,\n  \"group_size\": 1,\n  \"need_wifi\": true,\n  \"need_outlet\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /api/recommendations (kerja-kelompok)",
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/recommendations",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"purpose\": \"kerja-kelompok\",\n  \"budget\": 25000,\n  \"group_size\": 5,\n  \"need_wifi\": true,\n  \"need_outlet\": false\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
