@@ -30,7 +30,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/api/auth/login')) authService.logout();
+    if (error.response?.status === 401 && !error.config?.url?.includes('/api/auth/')) authService.logout();
     if (!error.response) {
       // Network error / offline
       return Promise.reject(new Error('Tidak ada koneksi internet. Data mungkin dari cache.'));

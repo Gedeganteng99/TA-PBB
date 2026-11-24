@@ -24,8 +24,12 @@ export default function App() {
   const location = useLocation();
   const role = authService.role();
 
-  if (location.pathname === '/masuk') return <RoleLoginPage />;
-  if (location.pathname === '/admin/login' && role !== 'admin') return <AdminLoginPage />;
+  if (location.pathname === '/admin/login') {
+    return role === 'admin' ? <Navigate to="/kelola" replace /> : <AdminLoginPage />;
+  }
+  if (location.pathname === '/masuk' || location.pathname === '/daftar') {
+    return role ? <Navigate to={role === 'admin' ? '/kelola' : '/'} replace /> : <RoleLoginPage />;
+  }
   if (!role) return <Navigate to="/masuk" replace />;
   if (role === 'pengguna') {
     return (
@@ -42,6 +46,7 @@ export default function App() {
             <Route path="/cari"      element={<SpotFinderPage />} />
             <Route path="/favorit"   element={<FavoritesPage />} />
             <Route path="/profil"    element={<ProfilePage />} />
+            <Route path="/daftar"    element={<Navigate to="/" replace />} />
             <Route path="/admin/login" element={<Navigate to="/" replace />} />
             <Route path="/kelola"    element={<Navigate to="/" replace />} />
             <Route path="*" element={
@@ -74,6 +79,7 @@ export default function App() {
           <Route path="/cari"      element={<SpotFinderPage />} />
           <Route path="/favorit"   element={<FavoritesPage />} />
           <Route path="/profil"    element={<ProfilePage />} />
+          <Route path="/daftar"    element={<Navigate to="/" replace />} />
           <Route path="/admin/login" element={<Navigate to="/" replace />} />
           <Route path="/kelola"    element={<AdminRoute><AdminPage /></AdminRoute>} />
 

@@ -46,18 +46,20 @@ ngopikampus/
 │   └── vite.config.js
 └── database/
     ├── schema.sql    # Jalankan pertama
-    └── seed.sql      # Jalankan kedua
+    ├── seed.sql      # Jalankan kedua
+    └── user_auth.sql # Migrasi akun pengguna
 ```
 
 ## 🗄️ Database (Supabase)
 
-Tabel: `cafes`, `reviews`, `crowd_reports`, `promos`, `favorites`
+Tabel: `cafes`, `reviews`, `crowd_reports`, `promos`, `favorites`, `app_users`
 
 **Langkah setup:**
 1. Buat project di [supabase.com](https://supabase.com)
 2. Buka **SQL Editor**
 3. Jalankan `database/schema.sql`
 4. Jalankan `database/seed.sql`
+5. Jalankan `database/user_auth.sql` untuk membuat tabel akun pengguna. Pada database yang sudah berisi data, jalankan hanya migrasi ini; jangan jalankan ulang `schema.sql` karena file tersebut menghapus tabel aplikasi saat reset.
 
 > ⚠️ Data seed adalah **data contoh fiktif**. Ganti dengan data kafe asli hasil survei sebelum submit.
 
@@ -120,7 +122,7 @@ study_score  = wifi_score + outlet_score + noise_score + seat_score + rating_sco
 ```bash
 cd ngopikampus/backend
 cp .env.example .env
-# Edit .env: isi SUPABASE_URL dan SUPABASE_KEY
+# Edit .env: isi SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY
 npm install
 npm run dev
 # Server berjalan di http://localhost:3001
@@ -143,7 +145,7 @@ Repo ini memakai satu Vercel project dengan dua services yang dibangun terpisah.
 
 1. Push repo ke GitHub dan impor repo **sekali** sebagai project di [Vercel](https://vercel.com).
 2. Biarkan **Root Directory** project di root repo agar Vercel membaca `vercel.json` multi-service.
-3. Tambahkan environment variables project: `SUPABASE_URL`, `SUPABASE_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `AUTH_TOKEN_SECRET` (minimal 32 karakter).
+3. Tambahkan environment variables backend: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `AUTH_TOKEN_SECRET` (minimal 32 karakter). Service role key harus disimpan hanya di environment server, jangan beri awalan `VITE_`.
 4. Deploy. Pastikan deployment memakai dukungan **Services** Vercel; fitur ini masih berstatus Beta menurut dokumentasi Vercel.
 5. `FRONTEND_URL` tidak dibutuhkan untuk pemanggilan same-origin. `VITE_API_BASE_URL` juga biarkan kosong/tidak disetel di Vercel. Untuk pengembangan lokal dengan dua server terpisah, isi `VITE_API_BASE_URL=http://localhost:3001` di `frontend/.env`.
 
@@ -183,7 +185,7 @@ Untuk memasang PWA di iPhone, gunakan URL HTTPS hasil deploy. Di Safari buka sit
 ### Backend `.env`
 ```
 SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-server-only-service-role-key
 PORT=3001
 FRONTEND_URL=http://localhost:5173
 ADMIN_EMAIL=admin@example.com
@@ -205,9 +207,9 @@ Import file `postman_collection.json` ke Postman, lalu set variable:
 
 ## 🧪 Langkah Manual yang Harus Dilakukan
 
-1. **Supabase**: Buat project → salin URL & anon key
-2. **SQL**: Jalankan `schema.sql` lalu `seed.sql` di SQL Editor
-3. **Env**: Isi `.env` backend & frontend
+1. **Supabase**: Buat project → salin Project URL dan service role key untuk backend
+2. **SQL**: Jalankan `schema.sql`, `seed.sql`, lalu `user_auth.sql` di SQL Editor
+3. **Env**: Isi `.env` backend dengan service role key dan kredensial admin; jangan commit `.env`
 4. **Test API**: Jalankan backend → test dengan Postman/curl
 5. **Deploy**: Impor root repo sebagai satu Vercel multi-service project
 6. **GitHub**: `git init` → `git remote add origin` → `git push`

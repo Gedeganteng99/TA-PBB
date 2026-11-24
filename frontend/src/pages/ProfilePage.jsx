@@ -102,9 +102,9 @@ export default function ProfilePage() {
       </div>
 
       {/* Install Button */}
-      <Link to={authService.isAdmin() ? '/kelola' : '/admin/login'} className="btn btn-primary btn-full" id="profile-manage-data-btn" style={{ marginBottom: 'var(--space-4)' }}>
-        <Database size={18} /> {authService.isAdmin() ? 'Kelola Data Kafe & Promo' : 'Login Admin untuk Kelola Data'}
-      </Link>
+      {authService.isAdmin() && <Link to="/kelola" className="btn btn-primary btn-full" id="profile-manage-data-btn" style={{ marginBottom: 'var(--space-4)' }}>
+        <Database size={18} /> Kelola Data Kafe &amp; Promo
+      </Link>}
 
       <div style={{ marginBottom: 'var(--space-4)' }}>
         <InstallButton className="btn-full" />

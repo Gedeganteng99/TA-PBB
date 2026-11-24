@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, KeyRound, LogIn } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { authService } from '../services/authService.js';
 
 export default function AdminLoginPage() {
@@ -11,18 +10,16 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (authService.isAdmin()) return <Navigate to="/" replace />;
-
   const submit = async (event) => {
     event.preventDefault(); setLoading(true); setError('');
-    try { await authService.login(email, password); navigate('/', { replace: true }); }
-    catch (err) { setError(err.message || 'Login gagal. Periksa email dan password admin.'); }
+    try { await authService.login(email, password); navigate('/kelola', { replace: true }); }
+    catch (err) { setError(err.message || 'Email atau password salah'); }
     finally { setLoading(false); }
   };
 
   return (
     <div className="page-container admin-login-page">
-      <Link to="/masuk" className="btn btn-secondary btn-sm"><ArrowLeft size={16} /> Pilih role</Link>
+      <Link to="/masuk" className="btn btn-secondary btn-sm"><ArrowLeft size={16} /> Kembali</Link>
       <section className="admin-login-card">
         <div className="admin-login-icon"><KeyRound size={26} /></div>
         <p className="admin-eyebrow">AREA ADMIN</p>
@@ -34,7 +31,7 @@ export default function AdminLoginPage() {
           {error && <p className="admin-form-error" role="alert">{error}</p>}
           <button className="btn btn-primary btn-full" disabled={loading}><LogIn size={17} />{loading ? 'Memeriksa…' : 'Masuk sebagai admin'}</button>
         </form>
-        <p className="admin-login-note">Pengguna umum dapat masuk dari halaman pilihan role. Akses perubahan data hanya untuk admin.</p>
+        <p className="admin-login-note">Halaman khusus pengelola NgopiKampus.</p>
       </section>
     </div>
   );
