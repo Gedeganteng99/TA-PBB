@@ -1070,6 +1070,10 @@ ul, ol {
 .admin-form-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
 .admin-field { display: flex; min-width: 0; flex-direction: column; gap: var(--space-2); color: var(--color-text-secondary); font-size: var(--text-sm); font-weight: 600; }
 .admin-field .form-input { width: 100%; }
+.image-upload-hint { color: var(--color-text-muted); font-size: var(--text-xs); font-weight: 400; line-height: 1.5; }
+.image-upload-preview { display: flex; align-items: center; gap: var(--space-3); max-width: 420px; padding: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
+.image-upload-preview img { width: 112px; height: 84px; flex: 0 0 auto; border-radius: var(--radius-sm); object-fit: cover; }
+.image-upload-preview > div { display: grid; gap: var(--space-2); justify-items: start; color: var(--color-text-secondary); font-size: var(--text-xs); }
 .admin-checks { display: flex; flex-wrap: wrap; gap: var(--space-5); }
 .admin-checks label { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; font-size: var(--text-sm); }
 .admin-checks input { width: 18px; height: 18px; accent-color: var(--color-primary); }
@@ -1118,4 +1122,9 @@ ul, ol {
   .admin-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-form-grid .wide { grid-column: 1 / -1; }
   .admin-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .image-upload-preview { max-width: 100%; }
+  .image-upload-preview img { width: 90px; height: 72px; }
 }

@@ -12,12 +12,11 @@ import SpotFinderPage  from './pages/SpotFinderPage.jsx';
 import FavoritesPage   from './pages/FavoritesPage.jsx';
 import ProfilePage     from './pages/ProfilePage.jsx';
 import AdminPage       from './pages/AdminPage.jsx';
-import AdminLoginPage  from './pages/AdminLoginPage.jsx';
 import RoleLoginPage   from './pages/RoleLoginPage.jsx';
 import { authService } from './services/authService.js';
 
 function AdminRoute({ children }) {
-  return authService.isAdmin() ? children : <Navigate to="/admin/login" replace />;
+  return authService.isAdmin() ? children : <Navigate to="/masuk" replace />;
 }
 
 export default function App() {
@@ -25,7 +24,7 @@ export default function App() {
   const role = authService.role();
 
   if (location.pathname === '/admin/login') {
-    return role === 'admin' ? <Navigate to="/kelola" replace /> : <AdminLoginPage />;
+    return <Navigate to={role === 'admin' ? '/kelola' : role === 'pengguna' ? '/' : '/masuk'} replace />;
   }
   if (location.pathname === '/masuk' || location.pathname === '/daftar') {
     return role ? <Navigate to={role === 'admin' ? '/kelola' : '/'} replace /> : <RoleLoginPage />;

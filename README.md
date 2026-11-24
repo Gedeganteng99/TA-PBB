@@ -47,7 +47,8 @@ ngopikampus/
 └── database/
     ├── schema.sql    # Jalankan pertama
     ├── seed.sql      # Jalankan kedua
-    └── user_auth.sql # Migrasi akun pengguna
+    ├── user_auth.sql # Migrasi akun pengguna
+    └── storage.sql   # Bucket foto kafe
 ```
 
 ## 🗄️ Database (Supabase)
@@ -60,6 +61,7 @@ Tabel: `cafes`, `reviews`, `crowd_reports`, `promos`, `favorites`, `app_users`
 3. Jalankan `database/schema.sql`
 4. Jalankan `database/seed.sql`
 5. Jalankan `database/user_auth.sql` untuk membuat tabel akun pengguna. Pada database yang sudah berisi data, jalankan hanya migrasi ini; jangan jalankan ulang `schema.sql` karena file tersebut menghapus tabel aplikasi saat reset.
+6. Jalankan `database/storage.sql` untuk membuat bucket foto kafe. Bucket bersifat public-read agar foto dapat ditampilkan; upload hanya dilakukan backend setelah verifikasi admin.
 
 > ⚠️ Data seed adalah **data contoh fiktif**. Ganti dengan data kafe asli hasil survei sebelum submit.
 
@@ -70,7 +72,8 @@ Tabel: `cafes`, `reviews`, `crowd_reports`, `promos`, `favorites`, `app_users`
 | Method | Path | Deskripsi |
 |--------|------|-----------|
 | GET | `/api/health` | Health check |
-| POST | `/api/auth/login` | Login admin (kredensial dari environment backend) |
+| POST | `/api/auth/login` | Login terpadu Admin/Pengguna; backend menentukan role |
+| POST | `/api/auth/user/register` | Registrasi akun baru dengan role Pengguna |
 | GET | `/api/auth/me` | Memeriksa role token; default pengguna (read-only) |
 | GET | `/api/cafes` | List kafe (search, area, sort, open_now, min_wifi, dll) |
 | GET | `/api/cafes/:id` | Detail kafe + study_score + crowd_status |
@@ -93,10 +96,10 @@ Tabel: `cafes`, `reviews`, `crowd_reports`, `promos`, `favorites`, `app_users`
 
 ## 👥 Role Admin dan Pengguna
 
-- **Pengguna** dapat membuka aplikasi tanpa login dan membaca data. Operasi CRUD kafe/promo di backend hanya menerima token admin.
-- Saat sesi baru dibuka, halaman pilihan role wajib ditampilkan. Pengguna memilih tombol pengguna untuk masuk langsung; sebelum memilih role, halaman aplikasi tidak dapat diakses. Role pengguna dibatasi ke daftar kafe.
-- **Admin** login melalui metode email dan password. Isi `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `AUTH_TOKEN_SECRET` di environment backend; jangan simpan kredensial dalam source code.
-- Token admin berlaku 8 jam. Tombol **Keluar** menghapus token lokal.
+- Semua akun masuk melalui form yang sama di `/masuk`. Backend menentukan role Admin berdasarkan `ADMIN_EMAIL` dan `ADMIN_PASSWORD`; akun lain diverifikasi sebagai Pengguna.
+- Pendaftaran hanya membuat akun role Pengguna. Operasi CRUD kafe/promo di backend hanya menerima token admin.
+- Isi `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `AUTH_TOKEN_SECRET` di environment backend; jangan simpan kredensial dalam source code.
+- Token berlaku 8 jam. Tombol **Keluar** menghapus token lokal.
 - Policy RLS yang dibuka untuk praktikum tetap perlu diperketat sebelum produksi.
 
 ## 📊 Formula Study Score

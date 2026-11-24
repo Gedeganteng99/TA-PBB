@@ -31,18 +31,40 @@ async function verifyPassword(password, stored) {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-export const login = asyncHandler(async (req, res) => {
-  const email = process.env.ADMIN_EMAIL || process.env.ADMIN_USERNAME;
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password || !process.env.AUTH_TOKEN_SECRET || process.env.AUTH_TOKEN_SECRET.length < 32) {
-    return res.status(500).json({ success: false, data: null, message: 'Konfigurasi admin belum disiapkan di environment backend.' });
-  }
-  const submittedEmail = normalizeEmail(req.body?.email ?? req.body?.username);
-  if (!EMAIL_PATTERN.test(submittedEmail) || typeof req.body?.password !== 'string' || !safeEquals(submittedEmail, email.trim().toLowerCase()) || !safeEquals(req.body.password, password)) {
+async function loginRegisteredUser(email, password, res) {
+  const { data, error } = await supabase
+    .from('app_users')
+    .select('id, full_name, email, password_hash, role')
+    .eq('email', email)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data || data.role !== 'pengguna' || !await verifyPassword(password, data.password_hash)) {
     return res.status(401).json({ success: false, data: null, message: 'Email atau password salah' });
   }
-  const token = createAdminToken(email);
-  res.json({ success: true, data: { token, user: { email, role: 'admin' }, expires_in: 28800 }, message: 'Login admin berhasil.' });
+  const token = createUserToken(data.id);
+  return res.json({ success: true, data: { token, user: { id: data.id, name: data.full_name, email: data.email, role: 'pengguna' }, expires_in: 28800 }, message: 'Login berhasil.' });
+}
+
+// One login endpoint identifies the role from the matching credentials.
+export const login = asyncHandler(async (req, res) => {
+  const submittedEmail = normalizeEmail(req.body?.email ?? req.body?.username);
+  const submittedPassword = req.body?.password;
+  if (!EMAIL_PATTERN.test(submittedEmail) || submittedEmail.length > 254 || typeof submittedPassword !== 'string' || submittedPassword.length < 1 || submittedPassword.length > 128) {
+    return res.status(401).json({ success: false, data: null, message: 'Email atau password salah' });
+  }
+
+  const adminEmail = normalizeEmail(process.env.ADMIN_EMAIL || process.env.ADMIN_USERNAME);
+  if (adminEmail && submittedEmail === adminEmail) {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const secretReady = process.env.AUTH_TOKEN_SECRET && process.env.AUTH_TOKEN_SECRET.length >= 32;
+    if (!adminPassword || !secretReady || !safeEquals(submittedPassword, adminPassword)) {
+      return res.status(401).json({ success: false, data: null, message: 'Email atau password salah' });
+    }
+    const token = createAdminToken(adminEmail);
+    return res.json({ success: true, data: { token, user: { email: adminEmail, role: 'admin' }, expires_in: 28800 }, message: 'Login admin berhasil.' });
+  }
+
+  return loginRegisteredUser(submittedEmail, submittedPassword, res);
 });
 
 export const registerUser = asyncHandler(async (req, res) => {
@@ -54,6 +76,10 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
   if (!EMAIL_PATTERN.test(email) || email.length > 254) {
     return res.status(400).json({ success: false, data: null, message: 'Masukkan alamat email yang valid.' });
+  }
+  const configuredAdminEmail = normalizeEmail(process.env.ADMIN_EMAIL || process.env.ADMIN_USERNAME);
+  if (configuredAdminEmail && email === configuredAdminEmail) {
+    return res.status(409).json({ success: false, data: null, message: 'Email tersebut tidak dapat digunakan untuk pendaftaran.' });
   }
   if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
     return res.status(400).json({ success: false, data: null, message: 'Password harus berisi 8 sampai 128 karakter.' });
@@ -82,18 +108,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, data: null, message: 'Email atau password salah' });
   }
 
-  const { data, error } = await supabase
-    .from('app_users')
-    .select('id, full_name, email, password_hash, role')
-    .eq('email', email)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data || data.role !== 'pengguna' || !await verifyPassword(password, data.password_hash)) {
-    return res.status(401).json({ success: false, data: null, message: 'Email atau password salah' });
-  }
-
-  const token = createUserToken(data.id);
-  res.json({ success: true, data: { token, user: { id: data.id, name: data.full_name, email: data.email, role: 'pengguna' }, expires_in: 28800 }, message: 'Login berhasil.' });
+  return loginRegisteredUser(email, password, res);
 });
 
 export const me = asyncHandler(async (req, res) => {

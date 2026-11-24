@@ -16,6 +16,43 @@ const newCafe = () => ({
 });
 const newPromo = () => ({ cafe_id: '', title: '', description: '', terms: '', requires_ktm: false, valid_from: '', valid_until: '' });
 const dateOnly = (value) => value ? String(value).slice(0, 10) : '';
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+
+async function optimizeCafeImage(file) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    throw new Error('Pilih foto JPG, PNG, atau WebP.');
+  }
+  if (file.size > 20 * 1024 * 1024) throw new Error('Ukuran foto asli maksimal 20 MB.');
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    const loaded = new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error('Foto tidak dapat dibuka. Coba file gambar lain.'));
+    });
+    image.src = objectUrl;
+    await loaded;
+
+    const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    let blob;
+    for (const quality of [0.82, 0.7, 0.58, 0.46]) {
+      blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+      if (blob && blob.size <= MAX_IMAGE_BYTES) break;
+    }
+    if (!blob || blob.size > MAX_IMAGE_BYTES) throw new Error('Foto terlalu besar setelah dikompres. Pilih foto lain.');
+
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'foto-kafe';
+    return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg', lastModified: Date.now() });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 function Field({ label, children, className = '' }) {
   return <label className={`admin-field ${className}`}><span>{label}</span>{children}</label>;
@@ -32,7 +69,19 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(null);
   const [cafeForm, setCafeForm] = useState(newCafe);
+  const [selectedCafeImage, setSelectedCafeImage] = useState(null);
+  const [cafeImagePreview, setCafeImagePreview] = useState('');
   const [promoForm, setPromoForm] = useState(newPromo);
+
+  useEffect(() => {
+    if (!selectedCafeImage) {
+      setCafeImagePreview(cafeForm.image_url || '');
+      return undefined;
+    }
+    const previewUrl = URL.createObjectURL(selectedCafeImage);
+    setCafeImagePreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [selectedCafeImage, cafeForm.image_url]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -54,11 +103,13 @@ export default function AdminPage() {
     setEditing(null);
     setFormError('');
     setCafeForm(newCafe());
+    setSelectedCafeImage(null);
     setPromoForm(newPromo());
   };
 
   const startEditCafe = (cafe) => {
     setTab('cafes'); setEditing(cafe.id); setFormError('');
+    setSelectedCafeImage(null);
     setCafeForm({ ...newCafe(), ...cafe, tags: (cafe.tags ?? []).join(', ') });
     document.getElementById('admin-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -88,10 +139,27 @@ export default function AdminPage() {
       return;
     }
     try {
+      if (selectedCafeImage) {
+        const uploadResponse = await cafeService.uploadImage(selectedCafeImage);
+        payload.image_url = uploadResponse.data.data.image_url;
+      }
       if (editing) await cafeService.update(editing, payload); else await cafeService.create(payload);
       resetForm(); await loadData();
     } catch (err) { setFormError(err.message || 'Tidak dapat menyimpan kafe.'); }
     finally { setSaving(false); }
+  };
+
+  const chooseCafeImage = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setFormError('');
+    try {
+      const optimized = await optimizeCafeImage(file);
+      setSelectedCafeImage(optimized);
+    } catch (err) {
+      setFormError(err.message || 'Foto tidak dapat diproses.');
+    }
   };
 
   const savePromo = async (event) => {
@@ -177,7 +245,11 @@ export default function AdminPage() {
             <Field label="Kapasitas kursi"><input className="form-input" type="number" min="0" value={cafeForm.seat_capacity} onChange={(e) => setCafeForm({ ...cafeForm, seat_capacity: e.target.value })} /></Field>
             <Field label="Colokan (1–5)"><select className="form-input form-select" value={cafeForm.outlet_level} onChange={(e) => setCafeForm({ ...cafeForm, outlet_level: e.target.value })}>{[1,2,3,4,5].map((n) => <option key={n} value={n}>{n}</option>)}</select></Field>
             <Field label="Ketenangan (1–5)"><select className="form-input form-select" value={cafeForm.noise_level} onChange={(e) => setCafeForm({ ...cafeForm, noise_level: e.target.value })}>{[1,2,3,4,5].map((n) => <option key={n} value={n}>{n}</option>)}</select></Field>
-            <Field label="URL gambar" className="wide"><input className="form-input" type="url" value={cafeForm.image_url || ''} onChange={(e) => setCafeForm({ ...cafeForm, image_url: e.target.value })} /></Field>
+            <Field label="Foto kafe" className="wide">
+              <input className="form-input image-file-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={chooseCafeImage} />
+              <small className="image-upload-hint">Pilih foto dari perangkat (JPG, PNG, atau WebP). Foto otomatis diperkecil sebelum diunggah.</small>
+            </Field>
+            {cafeImagePreview && <div className="image-upload-preview wide"><img src={cafeImagePreview} alt="Pratinjau foto kafe" /><div><span>{selectedCafeImage ? 'Foto baru siap diunggah' : 'Foto saat ini'}</span><button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSelectedCafeImage(null); setCafeForm({ ...cafeForm, image_url: '' }); }}>Hapus foto</button></div></div>}
             <Field label="Tag (pisahkan koma)" className="wide"><input className="form-input" value={cafeForm.tags} onChange={(e) => setCafeForm({ ...cafeForm, tags: e.target.value })} placeholder="skripsi, kerja-kelompok, santai" /></Field>
             <div className="admin-checks"><label><input type="checkbox" checked={Boolean(cafeForm.has_ac)} onChange={(e) => setCafeForm({ ...cafeForm, has_ac: e.target.checked })} /> Ada AC</label><label><input type="checkbox" checked={Boolean(cafeForm.has_musholla)} onChange={(e) => setCafeForm({ ...cafeForm, has_musholla: e.target.checked })} /> Ada musholla</label></div>
             <div className="admin-form-actions wide"><button type="button" className="btn btn-secondary" onClick={resetForm}>Kosongkan</button><button className="btn btn-primary" disabled={saving}><Save size={16} />{saving ? 'Menyimpan…' : editing ? 'Simpan perubahan' : 'Tambah kafe'}</button></div>
